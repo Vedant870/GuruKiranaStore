@@ -399,6 +399,15 @@ function App() {
   useEffect(() => {
     const revealElements = document.querySelectorAll('[data-reveal]');
 
+    if (!revealElements.length) {
+      return undefined;
+    }
+
+    if (!('IntersectionObserver' in window)) {
+      revealElements.forEach((element) => element.classList.add('is-visible'));
+      return undefined;
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -416,8 +425,15 @@ function App() {
 
     revealElements.forEach((element) => observer.observe(element));
 
-    return () => observer.disconnect();
-  }, []);
+    const fallbackTimer = window.setTimeout(() => {
+      revealElements.forEach((element) => element.classList.add('is-visible'));
+    }, 700);
+
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(fallbackTimer);
+    };
+  }, [user]);
 
   const loadProducts = async () => {
     try {
