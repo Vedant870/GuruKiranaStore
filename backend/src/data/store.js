@@ -146,17 +146,67 @@ const seedProducts = [
 
 const nowIso = () => new Date().toISOString();
 
+const normalizeProduct = (product) => {
+  const sellingPrice = Number(product.sellingPrice ?? product.price ?? 0);
+  const derivedBuyPrice = Math.max(0, Math.round(sellingPrice * 0.8));
+  const buyPrice = Number(product.buyPrice ?? derivedBuyPrice);
+
+  return {
+    ...product,
+    price: sellingPrice,
+    sellingPrice,
+    buyPrice,
+    available:
+      typeof product.available === 'boolean'
+        ? product.available
+        : Number(product.stock || 0) > 0,
+  };
+};
+
+const normalizeOrderItem = (item) => {
+  const quantity = Number(item.quantity || 0);
+  const sellingPrice = Number(item.sellingPrice ?? item.price ?? 0);
+  const derivedBuyPrice = Math.max(0, Math.round(sellingPrice * 0.8));
+  const buyPrice = Number(item.buyPrice ?? derivedBuyPrice);
+  const lineTotal = Number(item.lineTotal ?? sellingPrice * quantity);
+  const lineCost = Number(item.lineCost ?? buyPrice * quantity);
+  const lineProfit = Number(item.lineProfit ?? lineTotal - lineCost);
+
+  return {
+    ...item,
+    price: sellingPrice,
+    sellingPrice,
+    buyPrice,
+    lineTotal,
+    lineCost,
+    lineProfit,
+  };
+};
+
+const normalizeOrder = (order) => {
+  const items = Array.isArray(order.items) ? order.items.map(normalizeOrderItem) : [];
+  const subtotal = Number(order.subtotal ?? items.reduce((sum, item) => sum + item.lineTotal, 0));
+  const deliveryFee = Number(order.deliveryFee ?? 0);
+  const totalCost = Number(order.totalCost ?? items.reduce((sum, item) => sum + item.lineCost, 0));
+  const profitAmount = Number(order.profitAmount ?? items.reduce((sum, item) => sum + item.lineProfit, 0));
+
+  return {
+    ...order,
+    items,
+    subtotal,
+    deliveryFee,
+    totalAmount: Number(order.totalAmount ?? subtotal + deliveryFee),
+    totalCost,
+    profitAmount,
+  };
+};
+
 const normalizeStore = (store) => ({
   ...store,
   products: Array.isArray(store.products)
-    ? store.products.map((product) => ({
-        ...product,
-        available:
-          typeof product.available === 'boolean'
-            ? product.available
-            : Number(product.stock || 0) > 0,
-      }))
+    ? store.products.map(normalizeProduct)
     : [],
+  orders: Array.isArray(store.orders) ? store.orders.map(normalizeOrder) : [],
 });
 
 const createInitialStore = async () => {
@@ -180,6 +230,8 @@ const createInitialStore = async () => {
       createdAt,
       updatedAt: createdAt,
       ...product,
+      sellingPrice: product.price,
+      buyPrice: Math.max(0, Math.round(product.price * 0.8)),
       available: true,
     })),
     orders: [],

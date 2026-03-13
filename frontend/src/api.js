@@ -81,6 +81,11 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
+  askAssistant: (payload) =>
+    request('/assistant/chat', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
   register: (payload) =>
     request('/auth/register', {
       method: 'POST',

@@ -48,19 +48,28 @@ router.post('/', authRequired, async (req, res, next) => {
         });
       }
 
+      const sellingPrice = Number(product.sellingPrice ?? product.price ?? 0);
+      const buyPrice = Number(product.buyPrice ?? 0);
+
       orderItems.push({
         productId: product.id,
         name: product.name,
         unit: product.unit,
         icon: product.icon,
-        price: product.price,
+        price: sellingPrice,
+        sellingPrice,
+        buyPrice,
         quantity,
-        lineTotal: product.price * quantity,
+        lineTotal: sellingPrice * quantity,
+        lineCost: buyPrice * quantity,
+        lineProfit: (sellingPrice - buyPrice) * quantity,
       });
     }
 
     const subtotal = orderItems.reduce((sum, item) => sum + item.lineTotal, 0);
     const deliveryFee = subtotal >= 399 ? 0 : 25;
+    const totalCost = orderItems.reduce((sum, item) => sum + item.lineCost, 0);
+    const profitAmount = orderItems.reduce((sum, item) => sum + item.lineProfit, 0);
     const createdAt = new Date().toISOString();
 
     const order = {
@@ -81,6 +90,8 @@ router.post('/', authRequired, async (req, res, next) => {
       subtotal,
       deliveryFee,
       totalAmount: subtotal + deliveryFee,
+      totalCost,
+      profitAmount,
       status: 'pending',
       createdAt,
       updatedAt: createdAt,

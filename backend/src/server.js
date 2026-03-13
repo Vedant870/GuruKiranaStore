@@ -5,6 +5,7 @@ import express from 'express';
 import { ensureStore } from './data/store.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import adminRoutes from './routes/admin.js';
+import assistantRoutes from './routes/assistant.js';
 import authRoutes from './routes/auth.js';
 import orderRoutes from './routes/orders.js';
 import productRoutes from './routes/products.js';
@@ -36,6 +37,7 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/assistant', assistantRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/admin', adminRoutes);

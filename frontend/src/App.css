@@ -507,6 +507,7 @@
 .checkout-form select,
 .admin-form input,
 .admin-form textarea,
+.assistant-chat__form input,
 .select-label select {
   width: 100%;
   padding: 0.95rem 1rem;
@@ -525,6 +526,7 @@
 .checkout-form select:focus,
 .admin-form input:focus,
 .admin-form textarea:focus,
+.assistant-chat__form input:focus,
 .select-label select:focus {
   border-color: rgba(30, 122, 57, 0.5);
   box-shadow: 0 0 0 4px rgba(30, 122, 57, 0.08);
@@ -669,11 +671,90 @@
   gap: 1rem;
 }
 
+.assistant-feature-banner {
+  padding: 1rem 1.05rem;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(30, 122, 57, 0.1), rgba(247, 183, 51, 0.12));
+  border: 1px solid rgba(30, 122, 57, 0.08);
+}
+
+.assistant-feature-banner strong,
+.assistant-feature-banner p {
+  margin: 0;
+}
+
+.assistant-feature-banner p {
+  margin-top: 0.45rem;
+  color: var(--text-soft);
+}
+
 .ai-card__intro,
 .ai-note,
 .ai-suggestion__reason {
   margin: 0;
   color: var(--text-soft);
+}
+
+.assistant-prompt-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.prompt-chip {
+  border: 1px solid rgba(30, 122, 57, 0.12);
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--brand-deep);
+  border-radius: 999px;
+  padding: 0.75rem 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.assistant-chat {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.assistant-chat__messages {
+  display: grid;
+  gap: 0.75rem;
+  max-height: 280px;
+  overflow: auto;
+  padding-right: 0.25rem;
+}
+
+.assistant-message {
+  padding: 0.95rem 1rem;
+  border-radius: 18px;
+  border: 1px solid rgba(30, 122, 57, 0.08);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.assistant-message--user {
+  background: rgba(30, 122, 57, 0.08);
+}
+
+.assistant-message__role {
+  display: inline-block;
+  margin-bottom: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--brand);
+}
+
+.assistant-message p,
+.inventory-profit-text {
+  margin: 0;
+  color: var(--text-soft);
+}
+
+.assistant-chat__form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.75rem;
 }
 
 .ai-suggestion-list {
@@ -1165,6 +1246,7 @@
   .inventory-item,
   .ai-suggestion__top,
   .ai-suggestion__name,
+  .assistant-chat__form,
   .profile-actions,
   .card-header-inline {
     flex-direction: column;

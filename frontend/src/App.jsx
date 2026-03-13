@@ -10,6 +10,8 @@ const shopDetails = {
   locationShort: 'Patranga Mandi, Ayodhya',
   serviceRange: '15-20 km nearby delivery',
   proprietor: 'Mr. Kesri Nandan',
+  whatsappNumber: '9695936681',
+  whatsappLink: 'https://wa.me/919695936681',
 };
 
 const heroFocusPoints = [
@@ -61,10 +63,16 @@ const emptyCheckoutForm = {
   paymentMethod: 'Cash on Delivery',
 };
 
+const defaultAssistantMessage = {
+  role: 'assistant',
+  text: 'Ask me about any listed product price or availability. If I do not know, I will reply No.',
+};
+
 const emptyProductForm = {
   name: '',
   category: 'Staples',
-  price: '',
+  buyPrice: '',
+  sellingPrice: '',
   unit: '',
   stock: '',
   description: '',
@@ -362,6 +370,8 @@ function App() {
   const [authForm, setAuthForm] = useState(emptyAuthForm);
   const [adminAuthForm, setAdminAuthForm] = useState(emptyAdminAuthForm);
   const [passwordForm, setPasswordForm] = useState(emptyPasswordForm);
+  const [assistantInput, setAssistantInput] = useState('');
+  const [assistantMessages, setAssistantMessages] = useState([defaultAssistantMessage]);
   const [checkoutForm, setCheckoutForm] = useState(emptyCheckoutForm);
   const [userOrders, setUserOrders] = useState([]);
   const [adminData, setAdminData] = useState({
@@ -377,6 +387,7 @@ function App() {
     checkout: false,
     adminProduct: false,
     passwordChange: false,
+    assistant: false,
   });
   const [alert, setAlert] = useState({ type: '', text: '' });
 
@@ -556,6 +567,14 @@ function App() {
     [cart, products, cartSubtotal],
   );
   const heroAiProducts = aiAssistantState.suggestions.length > 0 ? aiAssistantState.suggestions : featuredProducts;
+  const assistantPrompts = useMemo(
+    () => [
+      'What is the price of Tata Salt?',
+      'Is Amul Gold Milk available?',
+      'Which snacks are available right now?',
+    ],
+    [],
+  );
 
   const addToCart = (product) => {
     const availability = getAvailabilityMeta(product);
@@ -638,6 +657,10 @@ function App() {
       ...current,
       [name]: value,
     }));
+  };
+
+  const handleAssistantInputChange = (event) => {
+    setAssistantInput(event.target.value);
   };
 
   const handleProductChange = (event) => {
@@ -726,6 +749,45 @@ function App() {
     }
   };
 
+  const askProductAssistant = async (messageText) => {
+    const trimmedMessage = String(messageText || '').trim();
+
+    if (!trimmedMessage) {
+      return;
+    }
+
+    setAssistantMessages((current) => [...current, { role: 'user', text: trimmedMessage }]);
+    setAssistantInput('');
+
+    try {
+      setBusy((current) => ({ ...current, assistant: true }));
+      const response = await api.askAssistant({ message: trimmedMessage });
+
+      setAssistantMessages((current) => [
+        ...current,
+        {
+          role: 'assistant',
+          text: response.reply || 'No, I could not find that product or information right now.',
+        },
+      ]);
+    } catch {
+      setAssistantMessages((current) => [
+        ...current,
+        {
+          role: 'assistant',
+          text: 'No, I could not find that product or information right now.',
+        },
+      ]);
+    } finally {
+      setBusy((current) => ({ ...current, assistant: false }));
+    }
+  };
+
+  const handleAssistantSubmit = async (event) => {
+    event.preventDefault();
+    await askProductAssistant(assistantInput);
+  };
+
   const handleLogout = () => {
     clearSession();
     setToken(null);
@@ -786,7 +848,8 @@ function App() {
       setBusy((current) => ({ ...current, adminProduct: true }));
       const payload = {
         ...productForm,
-        price: Number(productForm.price),
+        buyPrice: Number(productForm.buyPrice),
+        sellingPrice: Number(productForm.sellingPrice),
         stock: Number(productForm.stock),
       };
 
@@ -813,7 +876,8 @@ function App() {
     setProductForm({
       name: product.name,
       category: product.category,
-      price: String(product.price),
+      buyPrice: String(product.buyPrice ?? ''),
+      sellingPrice: String(product.sellingPrice ?? product.price ?? ''),
       unit: product.unit,
       stock: String(product.stock),
       description: product.description,
@@ -860,6 +924,11 @@ function App() {
     totalOrders: 0,
     pendingOrders: 0,
     totalRevenue: 0,
+    totalProfit: 0,
+    todayRevenue: 0,
+    todayProfit: 0,
+    itemsSoldToday: 0,
+    lowStockProducts: 0,
   };
 
   return (
@@ -930,6 +999,9 @@ function App() {
               </a>
               <a className="btn btn-secondary" href="#products">
                 Browse products
+              </a>
+              <a className="btn btn-secondary" href={shopDetails.whatsappLink} target="_blank" rel="noreferrer">
+                Order on WhatsApp
               </a>
             </div>
 
@@ -1152,13 +1224,66 @@ function App() {
             <div id="ai-assistant" className="card ai-card reveal reveal--up" data-reveal>
               <div className="card-header-inline">
                 <div>
-                  <p className="eyebrow">AI smart basket assistant</p>
-                  <h3>Main AI feature for smarter grocery ordering</h3>
+                  <p className="eyebrow">AI product chatbot</p>
+                  <h3>Main AI feature for product price and availability</h3>
                 </div>
                 <span className="mini-badge">AI-based</span>
               </div>
 
               <p className="ai-card__intro">{aiAssistantState.insight}</p>
+
+              <div className="assistant-feature-banner">
+                <strong>Ask product rate and stock instantly</strong>
+                <p>
+                  Customers can ask about product price, availability, and stock. If the product is
+                  not found, the chatbot replies with <strong>No</strong>.
+                </p>
+              </div>
+
+              <div className="assistant-prompt-grid">
+                {assistantPrompts.map((prompt) => (
+                  <button
+                    key={prompt}
+                    type="button"
+                    className="prompt-chip"
+                    onClick={() => askProductAssistant(prompt)}
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
+
+              <div className="assistant-chat">
+                <div className="assistant-chat__messages">
+                  {assistantMessages.map((message, index) => (
+                    <div
+                      key={`${message.role}-${index}`}
+                      className={
+                        message.role === 'user'
+                          ? 'assistant-message assistant-message--user'
+                          : 'assistant-message assistant-message--assistant'
+                      }
+                    >
+                      <span className="assistant-message__role">
+                        {message.role === 'user' ? 'You' : 'AI'}
+                      </span>
+                      <p>{message.text}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <form className="assistant-chat__form" onSubmit={handleAssistantSubmit}>
+                  <input
+                    type="text"
+                    value={assistantInput}
+                    onChange={handleAssistantInputChange}
+                    placeholder="Ask product rate or availability"
+                  />
+                  <button type="submit" className="btn btn-primary" disabled={busy.assistant}>
+                    {busy.assistant ? 'Checking...' : 'Ask AI'}
+                  </button>
+                </form>
+              </div>
 
               <div className="ai-suggestion-list">
                 {aiAssistantState.suggestions.map((product) => (
@@ -1424,6 +1549,26 @@ function App() {
                 <span>Total revenue</span>
                 <strong>{formatPrice(adminStats.totalRevenue)}</strong>
               </div>
+              <div className="stat-card">
+                <span>Total profit</span>
+                <strong>{formatPrice(adminStats.totalProfit)}</strong>
+              </div>
+              <div className="stat-card">
+                <span>Today's revenue</span>
+                <strong>{formatPrice(adminStats.todayRevenue)}</strong>
+              </div>
+              <div className="stat-card">
+                <span>Today's profit</span>
+                <strong>{formatPrice(adminStats.todayProfit)}</strong>
+              </div>
+              <div className="stat-card">
+                <span>Items sold today</span>
+                <strong>{adminStats.itemsSoldToday}</strong>
+              </div>
+              <div className="stat-card">
+                <span>Low stock products</span>
+                <strong>{adminStats.lowStockProducts}</strong>
+              </div>
             </div>
 
             <div className="card reveal reveal--up" data-reveal>
@@ -1491,8 +1636,17 @@ function App() {
                       <input name="category" value={productForm.category} onChange={handleProductChange} />
                     </label>
                     <label>
-                      Price
-                      <input name="price" type="number" value={productForm.price} onChange={handleProductChange} />
+                      Buy price
+                      <input name="buyPrice" type="number" value={productForm.buyPrice} onChange={handleProductChange} />
+                    </label>
+                    <label>
+                      Selling price
+                      <input
+                        name="sellingPrice"
+                        type="number"
+                        value={productForm.sellingPrice}
+                        onChange={handleProductChange}
+                      />
                     </label>
                     <label>
                       Unit
@@ -1576,7 +1730,10 @@ function App() {
                           <div>
                             <strong>{product.name}</strong>
                             <p>
-                              {product.category} · {product.unit} · {formatPrice(product.price)}
+                              {product.category} · {product.unit} · Sell {formatPrice(product.sellingPrice ?? product.price)}
+                            </p>
+                            <p className="inventory-profit-text">
+                              Buy {formatPrice(product.buyPrice)} · Margin {formatPrice((product.sellingPrice ?? product.price) - product.buyPrice)}
                             </p>
                             <div className="inventory-item__meta">
                               <span className={availability.className}>{availability.label}</span>
