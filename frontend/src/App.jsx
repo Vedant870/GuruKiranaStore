@@ -6,7 +6,7 @@ import './App.css';
 
 const shopDetails = {
   name: 'Guru Kirana Store',
-  address: 'Guru Kirana Store, Patranga Mandi, Ayodhya, near Railway Station, 225408',
+  address: 'Guru Kirana Store, Patranga Mandi, Ayodhya, Near Railway Station, 225408',
   locationShort: 'Patranga Mandi, Ayodhya',
   serviceRange: '15-20 km nearby delivery',
   proprietor: 'Mr. Kesri Nandan',
@@ -22,8 +22,8 @@ const heroFocusPoints = [
     text: 'Fast grocery support within 15-20 km',
   },
   {
-    title: 'Live stock visibility',
-    text: 'Customers see available, low stock, and out of stock items clearly',
+    title: 'AI shopping help',
+    text: 'Smart product suggestions appear from the very first screen',
   },
 ];
 
@@ -46,6 +46,12 @@ const emptyAuthForm = {
 const emptyAdminAuthForm = {
   email: '',
   password: '',
+};
+
+const emptyPasswordForm = {
+  currentPassword: '',
+  newPassword: '',
+  confirmPassword: '',
 };
 
 const emptyCheckoutForm = {
@@ -355,6 +361,7 @@ function App() {
   const [authMode, setAuthMode] = useState('login');
   const [authForm, setAuthForm] = useState(emptyAuthForm);
   const [adminAuthForm, setAdminAuthForm] = useState(emptyAdminAuthForm);
+  const [passwordForm, setPasswordForm] = useState(emptyPasswordForm);
   const [checkoutForm, setCheckoutForm] = useState(emptyCheckoutForm);
   const [userOrders, setUserOrders] = useState([]);
   const [adminData, setAdminData] = useState({
@@ -369,6 +376,7 @@ function App() {
     adminLogin: false,
     checkout: false,
     adminProduct: false,
+    passwordChange: false,
   });
   const [alert, setAlert] = useState({ type: '', text: '' });
 
@@ -531,6 +539,7 @@ function App() {
     () => getAiAssistantState(cart, products, cartSubtotal),
     [cart, products, cartSubtotal],
   );
+  const heroAiProducts = aiAssistantState.suggestions.length > 0 ? aiAssistantState.suggestions : featuredProducts;
 
   const addToCart = (product) => {
     const availability = getAvailabilityMeta(product);
@@ -607,6 +616,14 @@ function App() {
     }));
   };
 
+  const handlePasswordFormChange = (event) => {
+    const { name, value } = event.target;
+    setPasswordForm((current) => ({
+      ...current,
+      [name]: value,
+    }));
+  };
+
   const handleProductChange = (event) => {
     const { name, type, value, checked } = event.target;
     setProductForm((current) => ({
@@ -650,13 +667,7 @@ function App() {
 
     try {
       setBusy((current) => ({ ...current, adminLogin: true }));
-      const response = await api.login(adminAuthForm);
-
-      if (response.user.role !== 'admin') {
-        setAdminAuthForm(emptyAdminAuthForm);
-        showAlert('This private section is only for admin login.', 'error');
-        return;
-      }
+      const response = await api.adminLogin(adminAuthForm);
 
       saveSession(response.token, response.user);
       setToken(response.token);
@@ -667,6 +678,35 @@ function App() {
       showAlert(error.message || 'Unable to open admin access.', 'error');
     } finally {
       setBusy((current) => ({ ...current, adminLogin: false }));
+    }
+  };
+
+  const handlePasswordChangeSubmit = async (event) => {
+    event.preventDefault();
+
+    if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+      showAlert('Please fill all password fields.', 'error');
+      return;
+    }
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      showAlert('New password and confirm password do not match.', 'error');
+      return;
+    }
+
+    try {
+      setBusy((current) => ({ ...current, passwordChange: true }));
+      const response = await api.changePassword({
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+      });
+
+      setPasswordForm(emptyPasswordForm);
+      showAlert(response.message || 'Password changed successfully.', 'success');
+    } catch (error) {
+      showAlert(error.message || 'Unable to change password.', 'error');
+    } finally {
+      setBusy((current) => ({ ...current, passwordChange: false }));
     }
   };
 
@@ -838,9 +878,14 @@ function App() {
               </button>
             </div>
           ) : (
-            <a className="btn btn-primary" href="#auth-panel">
-              Login / Register
-            </a>
+            <div className="user-quick-actions">
+              <a className="btn btn-primary" href="#auth-panel">
+                Customer Login
+              </a>
+              <a className="btn btn-secondary" href="#admin-access">
+                Admin Login
+              </a>
+            </div>
           )}
         </div>
       </header>
@@ -848,13 +893,14 @@ function App() {
       <main id="top" className="page-content">
         <section className="hero">
           <div className="hero__content reveal reveal--left is-visible" data-reveal>
-            <span className="hero-pill">Trusted local grocery store</span>
+            <span className="hero-pill">AI-powered local grocery store</span>
             <h1>
-              Main daily grocery items, clear prices, and quick local ordering from <span>Guru Kirana Store</span>.
+              Smarter local ordering with <span>AI product suggestions</span> at <span>Guru Kirana Store</span>.
             </h1>
             <p className="hero-copy">
-              Customers should see only the important things first: your shop name, current
-              location, delivery area, product availability, and a direct way to order.
+              This website now leads with AI on the front screen so customers instantly see smart
+              recommendations, useful grocery combos, stock visibility, your shop location, and a
+              direct way to order.
             </p>
 
             <div className="hero-location-line">
@@ -863,11 +909,11 @@ function App() {
             </div>
 
             <div className="hero__actions">
-              <a className="btn btn-primary" href="#products">
-                See products
+              <a className="btn btn-primary" href="#ai-assistant">
+                Try AI suggestions
               </a>
-              <a className="btn btn-secondary" href="#shop-location">
-                Shop location
+              <a className="btn btn-secondary" href="#products">
+                Browse products
               </a>
             </div>
 
@@ -908,10 +954,11 @@ function App() {
             </div>
 
             <div className="hero__panel-card hero__panel-card--soft reveal reveal--right is-visible" data-reveal>
-              <p className="eyebrow">Main products on homepage</p>
-              <h3>Important items customers notice first</h3>
+              <p className="eyebrow">Main AI feature</p>
+              <h3>AI smart shopping assistant</h3>
+              <p className="hero-panel-note">{aiAssistantState.insight}</p>
               <div className="hero-product-list">
-                {featuredProducts.map((product) => (
+                {heroAiProducts.map((product) => (
                   <div key={product.id} className="hero-product-item">
                     <span>{product.icon}</span>
                     <div>
@@ -919,13 +966,14 @@ function App() {
                       <p>
                         {product.unit} · {formatPrice(product.price)}
                       </p>
+                      {'reason' in product ? <p>{product.reason}</p> : null}
                     </div>
                   </div>
                 ))}
               </div>
               <p className="hero-panel-note">
-                The homepage is now more focused on products, location, stock visibility, and quick
-                ordering instead of extra decorative content.
+                AI is now shown on the front itself so customers immediately understand the smart
+                feature of your app.
               </p>
             </div>
           </div>
@@ -1085,11 +1133,11 @@ function App() {
               </form>
             </div>
 
-            <div className="card ai-card reveal reveal--up" data-reveal>
+            <div id="ai-assistant" className="card ai-card reveal reveal--up" data-reveal>
               <div className="card-header-inline">
                 <div>
                   <p className="eyebrow">AI smart basket assistant</p>
-                  <h3>Better grocery suggestions for growing business</h3>
+                  <h3>Main AI feature for smarter grocery ordering</h3>
                 </div>
                 <span className="mini-badge">AI-based</span>
               </div>
@@ -1128,7 +1176,7 @@ function App() {
               <div className="card-header-inline">
                 <div>
                   <p className="eyebrow">Customer access</p>
-                  <h3>{user ? 'Your account' : 'Login or create customer account'}</h3>
+                  <h3>{user ? 'Your account' : 'Customer login or create account'}</h3>
                 </div>
               </div>
 
@@ -1258,9 +1306,9 @@ function App() {
           <section id="admin-access" className="admin-access-section">
             <div className="card admin-access-card reveal reveal--up" data-reveal>
               <SectionHeader
-                eyebrow="Private admin access"
-                title="A separate secure space for Guru Kirana Store management"
-                description="Only admin credentials can open the dashboard. From there, admin can add products, set rates, control stock, and hide or show items for customers."
+                eyebrow="Admin login"
+                title="Admin access with secure login and password control"
+                description="Use the dedicated admin login here. After login, the admin can manage products, stock, orders, and also change the admin password securely."
               />
 
               <div className="admin-access-grid">
@@ -1272,14 +1320,14 @@ function App() {
                       <li>Add new grocery items with category, unit, rate, stock, and badge.</li>
                       <li>Edit any item and set whether it is available to customers or hidden.</li>
                       <li>See incoming customer orders and update their delivery status.</li>
-                      <li>Keep the public catalog updated without exposing admin tools to customers.</li>
+                      <li>Change the admin password from the dashboard after login.</li>
                     </ul>
                   </div>
 
                   <div className="admin-access-note admin-access-note--soft">
-                    <p className="eyebrow">Default admin email</p>
+                    <p className="eyebrow">Admin login details</p>
                     <strong>admin@gurukiranastore.in</strong>
-                    <p>Use the admin password from the setup guide in the project documentation.</p>
+                    <p>This form now uses dedicated admin login instead of the normal customer login.</p>
                   </div>
                 </div>
 
@@ -1360,6 +1408,51 @@ function App() {
                 <span>Total revenue</span>
                 <strong>{formatPrice(adminStats.totalRevenue)}</strong>
               </div>
+            </div>
+
+            <div className="card reveal reveal--up" data-reveal>
+              <div className="card-header-inline">
+                <div>
+                  <p className="eyebrow">Admin security</p>
+                  <h3>Change admin password</h3>
+                </div>
+              </div>
+
+              <form className="admin-form" onSubmit={handlePasswordChangeSubmit}>
+                <div className="admin-form__grid">
+                  <label>
+                    Current password
+                    <input
+                      type="password"
+                      name="currentPassword"
+                      value={passwordForm.currentPassword}
+                      onChange={handlePasswordFormChange}
+                    />
+                  </label>
+                  <label>
+                    New password
+                    <input
+                      type="password"
+                      name="newPassword"
+                      value={passwordForm.newPassword}
+                      onChange={handlePasswordFormChange}
+                    />
+                  </label>
+                  <label>
+                    Confirm new password
+                    <input
+                      type="password"
+                      name="confirmPassword"
+                      value={passwordForm.confirmPassword}
+                      onChange={handlePasswordFormChange}
+                    />
+                  </label>
+                </div>
+
+                <button type="submit" className="btn btn-primary" disabled={busy.passwordChange}>
+                  {busy.passwordChange ? 'Changing password...' : 'Change password'}
+                </button>
+              </form>
             </div>
 
             <div className="admin-layout">
