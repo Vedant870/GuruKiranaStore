@@ -22,6 +22,31 @@ const useMongo = Boolean(mongoUri);
 let cachedClient = null;
 let cachedDb = null;
 
+const summarizeMongoUri = (uri = '') => {
+  if (!uri) {
+    return {
+      present: false,
+      scheme: null,
+      host: null,
+      hasWhitespace: false,
+    };
+  }
+
+  const trimmedUri = String(uri).trim();
+  const schemeMatch = trimmedUri.match(/^(mongodb(?:\+srv)?):\/\//i);
+  const withoutScheme = trimmedUri.replace(/^mongodb(?:\+srv)?:\/\//i, '');
+  const atIndex = withoutScheme.lastIndexOf('@');
+  const hostAndPath = atIndex >= 0 ? withoutScheme.slice(atIndex + 1) : withoutScheme;
+  const host = hostAndPath.split('/')[0] || null;
+
+  return {
+    present: true,
+    scheme: schemeMatch ? schemeMatch[1] : 'invalid',
+    host,
+    hasWhitespace: /\s/.test(uri),
+  };
+};
+
 const seedProductIds = {
   'Aashirvaad Shudh Chakki Atta': 'product-aashirvaad-shudh-chakki-atta',
   'Fortune Basmati Rice': 'product-fortune-basmati-rice',
@@ -292,10 +317,30 @@ const getDb = async () => {
   }
 
   if (!cachedClient) {
-    cachedClient = new MongoClient(mongoUri, {
-      maxPoolSize: 10,
+    const uriSummary = summarizeMongoUri(mongoUri);
+    console.log('[guru-kirana-store] MongoDB connection attempt', {
+      dbName: mongoDbName,
+      uriSummary,
     });
-    await cachedClient.connect();
+
+    try {
+      cachedClient = new MongoClient(mongoUri, {
+        maxPoolSize: 10,
+        serverSelectionTimeoutMS: 10000,
+      });
+      await cachedClient.connect();
+      console.log('[guru-kirana-store] MongoDB connected successfully');
+    } catch (error) {
+      console.error('[guru-kirana-store] MongoDB connection failed', {
+        name: error?.name,
+        message: error?.message,
+        code: error?.code,
+        codeName: error?.codeName,
+      });
+      cachedClient = null;
+      cachedDb = null;
+      throw error;
+    }
   }
 
   cachedDb = cachedClient.db(mongoDbName);
