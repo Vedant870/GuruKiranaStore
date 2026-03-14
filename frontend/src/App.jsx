@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { api, clearSession, loadStoredSession, saveSession } from './api';
 import logo from './assets/guru-kirana-logo.svg';
@@ -12,6 +12,10 @@ const shopDetails = {
   proprietor: 'Mr. Kesri Nandan',
   whatsappNumber: '9695936681',
   whatsappLink: 'https://wa.me/919695936681',
+  developerName: 'Vedant',
+  developerPhone: '8707465693',
+  developerGithub: 'https://github.com/Vedant870',
+  developerLinkedin: 'https://www.linkedin.com/in/vedant-kasaudhan-9a444a291',
 };
 
 const heroFocusPoints = [
@@ -57,6 +61,7 @@ const emptyPasswordForm = {
 };
 
 const emptyCheckoutForm = {
+  phone: '',
   address: '',
   locality: '',
   notes: '',
@@ -390,6 +395,7 @@ function App() {
     assistant: false,
   });
   const [alert, setAlert] = useState({ type: '', text: '' });
+  const assistantMessagesRef = useRef(null);
 
   const showAlert = (text, type = 'success') => {
     setAlert({ text, type });
@@ -529,6 +535,17 @@ function App() {
       loadAdminDashboard();
     }
   }, [user]);
+
+  useEffect(() => {
+    if (!assistantMessagesRef.current) {
+      return;
+    }
+
+    assistantMessagesRef.current.scrollTo({
+      top: assistantMessagesRef.current.scrollHeight,
+      behavior: 'smooth',
+    });
+  }, [assistantMessages, busy.assistant]);
 
   const featuredProducts = useMemo(
     () => products.filter((product) => product.featured).slice(0, 3),
@@ -1166,6 +1183,17 @@ function App() {
 
               <form className="checkout-form" onSubmit={handleCheckout}>
                 <label>
+                  Phone number
+                  <input
+                    type="text"
+                    name="phone"
+                    value={checkoutForm.phone}
+                    onChange={handleCheckoutChange}
+                    placeholder="Enter contact number for the order"
+                  />
+                </label>
+
+                <label>
                   Delivery address
                   <textarea
                     name="address"
@@ -1254,7 +1282,7 @@ function App() {
               </div>
 
               <div className="assistant-chat">
-                <div className="assistant-chat__messages">
+                <div ref={assistantMessagesRef} className="assistant-chat__messages">
                   {assistantMessages.map((message, index) => (
                     <div
                       key={`${message.role}-${index}`}
@@ -1270,6 +1298,12 @@ function App() {
                       <p>{message.text}</p>
                     </div>
                   ))}
+                  {busy.assistant ? (
+                    <div className="assistant-message assistant-message--assistant assistant-message--loading">
+                      <span className="assistant-message__role">AI</span>
+                      <p>Checking products and stock for you...</p>
+                    </div>
+                  ) : null}
                 </div>
 
                 <form className="assistant-chat__form" onSubmit={handleAssistantSubmit}>
@@ -1785,6 +1819,29 @@ function App() {
             </div>
           </section>
         ) : null}
+
+        <footer className="site-footer reveal reveal--up" data-reveal>
+          <div className="site-footer__content">
+            <div>
+              <p className="eyebrow">Built with care</p>
+              <h3>Made by {shopDetails.developerName}</h3>
+              <p>
+                Business-focused grocery website with admin tools, AI support, and local ordering
+                flow for Guru Kirana Store.
+              </p>
+            </div>
+
+            <div className="site-footer__links">
+              <a href={`tel:${shopDetails.developerPhone}`}>📞 {shopDetails.developerPhone}</a>
+              <a href={shopDetails.developerGithub} target="_blank" rel="noreferrer">
+                GitHub Profile
+              </a>
+              <a href={shopDetails.developerLinkedin} target="_blank" rel="noreferrer">
+                LinkedIn Profile
+              </a>
+            </div>
+          </div>
+        </footer>
       </main>
     </div>
   );

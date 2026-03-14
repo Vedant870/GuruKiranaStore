@@ -6,7 +6,10 @@ import { v4 as uuidv4 } from 'uuid';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const dataDirectory = path.resolve(__dirname, '../../data');
+const isVercel = process.env.VERCEL === '1' || process.env.VERCEL === 'true';
+const dataDirectory = isVercel
+  ? path.resolve(process.cwd(), '.vercel-temp-data')
+  : path.resolve(__dirname, '../../data');
 const storeFilePath = path.join(dataDirectory, 'store.json');
 
 const seedProducts = [

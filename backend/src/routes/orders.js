@@ -11,6 +11,7 @@ router.post('/', authRequired, async (req, res, next) => {
   try {
     const {
       items = [],
+      phone = '',
       address = '',
       locality = '',
       notes = '',
@@ -21,8 +22,8 @@ router.post('/', authRequired, async (req, res, next) => {
       return res.status(400).json({ message: 'Please add at least one product to the order.' });
     }
 
-    if (!address.trim() || !locality.trim()) {
-      return res.status(400).json({ message: 'Address and locality are required.' });
+    if (!phone.trim() || !address.trim() || !locality.trim()) {
+      return res.status(400).json({ message: 'Phone number, address, and locality are required.' });
     }
 
     const store = await readStore();
@@ -78,7 +79,7 @@ router.post('/', authRequired, async (req, res, next) => {
       customer: {
         name: req.user.name,
         email: req.user.email,
-        phone: req.user.phone,
+        phone: phone.trim(),
       },
       items: orderItems,
       address: address.trim(),
