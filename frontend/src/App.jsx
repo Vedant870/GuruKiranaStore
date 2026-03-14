@@ -947,6 +947,7 @@ function App() {
     itemsSoldToday: 0,
     lowStockProducts: 0,
   };
+  const isAdminUser = user?.role === 'admin';
 
   return (
     <div className="app-shell">
@@ -955,23 +956,34 @@ function App() {
 
       {alert.text ? <div className={`alert alert--${alert.type || 'success'}`}>{alert.text}</div> : null}
 
-      <header className="topbar">
+      <header className={isAdminUser ? 'topbar topbar--admin' : 'topbar'}>
         <a href="#top" className="brand">
           <img src={logo} alt="Guru Kirana Store logo" />
           <div>
             <strong>Guru Kirana Store</strong>
-            <span>Trusted local grocery by Mr. Kesri Nandan</span>
+            <span>{isAdminUser ? 'Private Admin Workspace' : 'Trusted local grocery by Mr. Kesri Nandan'}</span>
           </div>
         </a>
 
         <nav className="topbar__nav">
-          <a href="#products">Products</a>
-          {user ? <a href="#orders">Orders</a> : null}
-          {user?.role === 'admin' ? <a href="#admin">Admin</a> : <a href="#admin-access">Admin Access</a>}
+          {isAdminUser ? (
+            <>
+              <a href="#admin">Dashboard</a>
+              <a href="#inventory-panel">Inventory</a>
+              <a href="#orders-admin">Orders</a>
+              <a href="#security-panel">Security</a>
+            </>
+          ) : (
+            <>
+              <a href="#products">Products</a>
+              {user ? <a href="#orders">Orders</a> : null}
+              <a href="#admin-access">Admin Access</a>
+            </>
+          )}
         </nav>
 
         <div className="topbar__actions">
-          <div className="mini-badge">15-20 km nearby delivery</div>
+          <div className="mini-badge">{isAdminUser ? 'Secure Admin Panel' : '15-20 km nearby delivery'}</div>
           {user ? (
             <div className="user-quick-actions">
               <span className="user-pill">{user.role === 'admin' ? 'Admin' : 'Customer'} · {user.name}</span>
@@ -992,7 +1004,9 @@ function App() {
         </div>
       </header>
 
-      <main id="top" className="page-content">
+      <main id="top" className={isAdminUser ? 'page-content page-content--admin' : 'page-content'}>
+        {!isAdminUser ? (
+          <>
         <section className="hero">
           <div className="hero__content reveal reveal--left is-visible" data-reveal>
             <span className="hero-pill">AI-powered local grocery store</span>
@@ -1557,6 +1571,22 @@ function App() {
             )}
           </section>
         ) : null}
+          </>
+        ) : (
+          <section className="admin-hero-card card reveal reveal--up is-visible" data-reveal>
+            <div className="card-header-inline">
+              <div>
+                <p className="eyebrow">Admin overview</p>
+                <h3>Private Guru Kirana Store management panel</h3>
+              </div>
+              <span className="mini-badge">Focused admin view</span>
+            </div>
+            <p className="helper-text">
+              This screen is now separated from the customer homepage so admin can manage products,
+              pricing, profit, and orders without unnecessary public-page scrolling.
+            </p>
+          </section>
+        )}
 
         {user?.role === 'admin' ? (
           <section id="admin" className="admin-section reveal reveal--up" data-reveal>
@@ -1605,7 +1635,7 @@ function App() {
               </div>
             </div>
 
-            <div className="card reveal reveal--up" data-reveal>
+            <div id="security-panel" className="card reveal reveal--up" data-reveal>
               <div className="card-header-inline">
                 <div>
                   <p className="eyebrow">Admin security</p>
@@ -1745,7 +1775,7 @@ function App() {
                 </form>
               </div>
 
-              <div className="card">
+              <div id="inventory-panel" className="card">
                 <div className="card-header-inline">
                   <div>
                     <p className="eyebrow">Inventory list</p>
@@ -1794,7 +1824,7 @@ function App() {
               </div>
             </div>
 
-            <div className="card admin-orders-card">
+            <div id="orders-admin" className="card admin-orders-card">
               <div className="card-header-inline">
                 <div>
                   <p className="eyebrow">Incoming orders</p>

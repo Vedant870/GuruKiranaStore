@@ -116,6 +116,23 @@
   animation: slideDownFade 700ms ease both;
 }
 
+.topbar--admin {
+  background: rgba(12, 28, 19, 0.88);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.topbar--admin .brand strong,
+.topbar--admin .topbar__nav a,
+.topbar--admin .user-pill,
+.topbar--admin .brand span,
+.topbar--admin .mini-badge {
+  color: #f7fff7;
+}
+
+.topbar--admin .mini-badge {
+  background: rgba(255, 255, 255, 0.12);
+}
+
 .brand {
   display: flex;
   align-items: center;
@@ -156,6 +173,10 @@
   width: min(1200px, calc(100% - 2rem));
   margin: 1.25rem auto 0;
   padding-bottom: 3rem;
+}
+
+.page-content--admin {
+  max-width: 1320px;
 }
 
 .hero {
@@ -1000,6 +1021,10 @@
   display: grid;
   gap: 1.1rem;
   margin-top: 1.3rem;
+}
+
+.admin-hero-card {
+  margin-bottom: 1.2rem;
 }
 
 .site-footer {
