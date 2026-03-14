@@ -8,6 +8,9 @@ export const signToken = (user) =>
   jwt.sign(
     {
       sub: user.id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
       role: user.role,
     },
     jwtSecret,
@@ -29,18 +32,23 @@ export const authRequired = async (req, res, next) => {
     const store = await readStore();
     const user = store.users.find((entry) => entry.id === decoded.sub);
 
-    if (!user) {
-      return res.status(401).json({ message: 'User not found.' });
-    }
-
-    req.user = {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      phone: user.phone,
-      role: user.role,
-      createdAt: user.createdAt,
-    };
+    req.user = user
+      ? {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          role: user.role,
+          createdAt: user.createdAt,
+        }
+      : {
+          id: decoded.sub,
+          name: decoded.name,
+          email: decoded.email,
+          phone: decoded.phone,
+          role: decoded.role,
+          createdAt: null,
+        };
 
     next();
   } catch {

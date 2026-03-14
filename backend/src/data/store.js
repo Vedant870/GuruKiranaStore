@@ -12,6 +12,22 @@ const dataDirectory = isVercel
   ? path.join(os.tmpdir(), 'guru-kirana-store-data')
   : path.resolve(__dirname, '../../data');
 const storeFilePath = path.join(dataDirectory, 'store.json');
+const adminUserId = 'admin-guru-kirana-store';
+
+const seedProductIds = {
+  'Aashirvaad Shudh Chakki Atta': 'product-aashirvaad-shudh-chakki-atta',
+  'Fortune Basmati Rice': 'product-fortune-basmati-rice',
+  'Tata Salt': 'product-tata-salt',
+  'Amul Gold Milk': 'product-amul-gold-milk',
+  'Parle-G Family Pack': 'product-parle-g-family-pack',
+  'Maggi Noodles Combo': 'product-maggi-noodles-combo',
+  'Surf Excel Easy Wash': 'product-surf-excel-easy-wash',
+  'Lizol Floor Cleaner': 'product-lizol-floor-cleaner',
+  'Good Life Refined Oil': 'product-good-life-refined-oil',
+  'Toor Dal Premium': 'product-toor-dal-premium',
+  'Colgate Strong Teeth': 'product-colgate-strong-teeth',
+  'Cold Drink Party Bottle': 'product-cold-drink-party-bottle',
+};
 
 const seedProducts = [
   {
@@ -157,6 +173,7 @@ const normalizeProduct = (product) => {
 
   return {
     ...product,
+    id: product.id || seedProductIds[product.name] || uuidv4(),
     price: sellingPrice,
     sellingPrice,
     buyPrice,
@@ -207,6 +224,12 @@ const normalizeOrder = (order) => {
 
 const normalizeStore = (store) => ({
   ...store,
+  users: Array.isArray(store.users)
+    ? store.users.map((user) => ({
+        ...user,
+        id: user.role === 'admin' ? adminUserId : user.id || uuidv4(),
+      }))
+    : [],
   products: Array.isArray(store.products)
     ? store.products.map(normalizeProduct)
     : [],
@@ -220,7 +243,7 @@ const createInitialStore = async () => {
   return {
     users: [
       {
-        id: uuidv4(),
+        id: adminUserId,
         name: 'Mr. Kesri Nandan',
         email: 'admin@gurukiranastore.in',
         phone: '9999999999',
@@ -230,7 +253,7 @@ const createInitialStore = async () => {
       },
     ],
     products: seedProducts.map((product) => ({
-      id: uuidv4(),
+      id: seedProductIds[product.name] || uuidv4(),
       createdAt,
       updatedAt: createdAt,
       ...product,

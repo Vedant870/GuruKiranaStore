@@ -1514,9 +1514,9 @@ function App() {
                   </div>
 
                   <div className="admin-access-note admin-access-note--soft">
-                    <p className="eyebrow">Admin login details</p>
-                    <strong>admin@gurukiranastore.in</strong>
-                    <p>This form now uses dedicated admin login instead of the normal customer login.</p>
+                    <p className="eyebrow">Private owner access</p>
+                    <strong>Admin credentials are hidden for privacy.</strong>
+                    <p>Only the owner should know the admin login details for this personal business panel.</p>
                   </div>
                 </div>
 

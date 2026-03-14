@@ -34,16 +34,11 @@ Modern neighborhood grocery website for **Guru Kirana Store**, built for easy pr
 - `bcryptjs` password hashing
 - File-based JSON persistence
 
-## Default Admin Login
-
-- **Email:** `admin@gurukiranastore.in`
-- **Password:** `GuruAdmin@123`
-
 ## Admin Workflow
 
 1. Open the website.
 2. Go to the **Private Admin Access** section.
-3. Login using the admin email and password.
+3. Login using the private owner credentials.
 4. Open the admin dashboard to:
    - add new products
    - update price and stock
