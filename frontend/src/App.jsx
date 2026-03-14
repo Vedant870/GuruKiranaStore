@@ -1585,6 +1585,20 @@ function App() {
               This screen is now separated from the customer homepage so admin can manage products,
               pricing, profit, and orders without unnecessary public-page scrolling.
             </p>
+            <div className="admin-quick-links">
+              <a className="btn btn-secondary" href="#inventory-panel">
+                Inventory
+              </a>
+              <a className="btn btn-secondary" href="#orders-admin">
+                Orders
+              </a>
+              <a className="btn btn-secondary" href="#security-panel">
+                Security
+              </a>
+              <button type="button" className="btn btn-primary" onClick={handleLogout}>
+                Logout Admin
+              </button>
+            </div>
           </section>
         )}
 
@@ -1850,28 +1864,30 @@ function App() {
           </section>
         ) : null}
 
-        <footer className="site-footer reveal reveal--up" data-reveal>
-          <div className="site-footer__content">
-            <div>
-              <p className="eyebrow">Built with care</p>
-              <h3>Made by {shopDetails.developerName}</h3>
-              <p>
-                Business-focused grocery website with admin tools, AI support, and local ordering
-                flow for Guru Kirana Store.
-              </p>
-            </div>
+        {!isAdminUser ? (
+          <footer className="site-footer reveal reveal--up" data-reveal>
+            <div className="site-footer__content">
+              <div>
+                <p className="eyebrow">Built with care</p>
+                <h3>Made by {shopDetails.developerName}</h3>
+                <p>
+                  Business-focused grocery website with admin tools, AI support, and local ordering
+                  flow for Guru Kirana Store.
+                </p>
+              </div>
 
-            <div className="site-footer__links">
-              <a href={`tel:${shopDetails.developerPhone}`}>📞 {shopDetails.developerPhone}</a>
-              <a href={shopDetails.developerGithub} target="_blank" rel="noreferrer">
-                GitHub Profile
-              </a>
-              <a href={shopDetails.developerLinkedin} target="_blank" rel="noreferrer">
-                LinkedIn Profile
-              </a>
+              <div className="site-footer__links">
+                <a href={`tel:${shopDetails.developerPhone}`}>📞 {shopDetails.developerPhone}</a>
+                <a href={shopDetails.developerGithub} target="_blank" rel="noreferrer">
+                  GitHub Profile
+                </a>
+                <a href={shopDetails.developerLinkedin} target="_blank" rel="noreferrer">
+                  LinkedIn Profile
+                </a>
+              </div>
             </div>
-          </div>
-        </footer>
+          </footer>
+        ) : null}
       </main>
     </div>
   );
