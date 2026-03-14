@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import fs from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { v4 as uuidv4 } from 'uuid';
@@ -8,7 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const isVercel = process.env.VERCEL === '1' || process.env.VERCEL === 'true';
 const dataDirectory = isVercel
-  ? path.resolve(process.cwd(), '.vercel-temp-data')
+  ? path.join(os.tmpdir(), 'guru-kirana-store-data')
   : path.resolve(__dirname, '../../data');
 const storeFilePath = path.join(dataDirectory, 'store.json');
 
