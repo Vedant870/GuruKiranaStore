@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { MongoClient } from 'mongodb';
 import { v4 as uuidv4 } from 'uuid';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -13,6 +14,13 @@ const dataDirectory = isVercel
   : path.resolve(__dirname, '../../data');
 const storeFilePath = path.join(dataDirectory, 'store.json');
 const adminUserId = 'admin-guru-kirana-store';
+const storeDocumentId = 'main-store';
+const mongoUri = process.env.MONGODB_URI?.trim() || '';
+const mongoDbName = process.env.MONGODB_DB_NAME?.trim() || 'guruKiranaStore';
+const useMongo = Boolean(mongoUri);
+
+let cachedClient = null;
+let cachedDb = null;
 
 const seedProductIds = {
   'Aashirvaad Shudh Chakki Atta': 'product-aashirvaad-shudh-chakki-atta',
@@ -236,6 +244,15 @@ const normalizeStore = (store) => ({
   orders: Array.isArray(store.orders) ? store.orders.map(normalizeOrder) : [],
 });
 
+const stripMongoMeta = (document) => {
+  if (!document) {
+    return null;
+  }
+
+  const { _id, ...rest } = document;
+  return rest;
+};
+
 const createInitialStore = async () => {
   const createdAt = nowIso();
   const adminPasswordHash = await bcrypt.hash('GuruAdmin@123', 10);
@@ -265,10 +282,73 @@ const createInitialStore = async () => {
   };
 };
 
+const getDb = async () => {
+  if (!useMongo) {
+    return null;
+  }
+
+  if (cachedDb) {
+    return cachedDb;
+  }
+
+  if (!cachedClient) {
+    cachedClient = new MongoClient(mongoUri, {
+      maxPoolSize: 10,
+    });
+    await cachedClient.connect();
+  }
+
+  cachedDb = cachedClient.db(mongoDbName);
+  return cachedDb;
+};
+
+const readStoreFile = async () => {
+  await fs.mkdir(dataDirectory, { recursive: true });
+  const fileContent = await fs.readFile(storeFilePath, 'utf-8');
+  return JSON.parse(fileContent);
+};
+
+const writeStoreFile = async (store) => {
+  await fs.mkdir(dataDirectory, { recursive: true });
+  await fs.writeFile(storeFilePath, JSON.stringify(store, null, 2), 'utf-8');
+};
+
+const ensureMongoStore = async () => {
+  const db = await getDb();
+  const collection = db.collection('app_state');
+  const existingStore = await collection.findOne({ _id: storeDocumentId });
+
+  if (!existingStore) {
+    const initialStore = normalizeStore(await createInitialStore());
+    await collection.insertOne({
+      _id: storeDocumentId,
+      ...initialStore,
+    });
+    return;
+  }
+
+  const normalizedStore = normalizeStore(stripMongoMeta(existingStore));
+
+  if (JSON.stringify(stripMongoMeta(existingStore)) !== JSON.stringify(normalizedStore)) {
+    await collection.replaceOne(
+      { _id: storeDocumentId },
+      {
+        _id: storeDocumentId,
+        ...normalizedStore,
+      },
+      { upsert: true },
+    );
+  }
+};
+
 export const ensureStore = async () => {
+  if (useMongo) {
+    await ensureMongoStore();
+    return;
+  }
+
   try {
-    const fileContent = await fs.readFile(storeFilePath, 'utf-8');
-    const parsed = JSON.parse(fileContent);
+    const parsed = await readStoreFile();
     const normalizedStore = normalizeStore(parsed);
 
     if (!normalizedStore.users || !normalizedStore.products || !normalizedStore.orders) {
@@ -276,23 +356,42 @@ export const ensureStore = async () => {
     }
 
     if (JSON.stringify(parsed) !== JSON.stringify(normalizedStore)) {
-      await fs.writeFile(storeFilePath, JSON.stringify(normalizedStore, null, 2), 'utf-8');
+      await writeStoreFile(normalizedStore);
     }
   } catch {
-    await fs.mkdir(dataDirectory, { recursive: true });
     const initialStore = await createInitialStore();
-    await fs.writeFile(storeFilePath, JSON.stringify(initialStore, null, 2), 'utf-8');
+    await writeStoreFile(initialStore);
   }
 };
 
 export const readStore = async () => {
   await ensureStore();
-  const fileContent = await fs.readFile(storeFilePath, 'utf-8');
-  return normalizeStore(JSON.parse(fileContent));
+
+  if (useMongo) {
+    const db = await getDb();
+    const document = await db.collection('app_state').findOne({ _id: storeDocumentId });
+    return normalizeStore(stripMongoMeta(document));
+  }
+
+  return normalizeStore(await readStoreFile());
 };
 
 export const writeStore = async (store) => {
-  await fs.mkdir(dataDirectory, { recursive: true });
-  await fs.writeFile(storeFilePath, JSON.stringify(store, null, 2), 'utf-8');
-  return store;
+  const normalizedStore = normalizeStore(store);
+
+  if (useMongo) {
+    const db = await getDb();
+    await db.collection('app_state').replaceOne(
+      { _id: storeDocumentId },
+      {
+        _id: storeDocumentId,
+        ...normalizedStore,
+      },
+      { upsert: true },
+    );
+    return normalizedStore;
+  }
+
+  await writeStoreFile(normalizedStore);
+  return normalizedStore;
 };
